@@ -5,6 +5,7 @@ import (
 	"page-replacement-algorithms/utils"
 	"page-replacement-algorithms/utils/algorithms"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -98,7 +99,7 @@ func ParallelAlgorithmsSimulation(simulationLoops int, pagesQuantity int, maxPag
 }
 
 func ParallelSimulationsSimulation(simulationLoops int, pagesQuantity int, maxPageNum int, localityMaximumFrequency int, localityMaximumHistoryLength int, localityMaximumLength int, framesQuantity int) {
-	fifoFaults, optFaults, lruFaults, alruFaults, randFaults := 0, 0, 0, 0, 0
+	var fifoFaults, optFaults, lruFaults, alruFaults, randFaults uint64 = 0, 0, 0, 0, 0
 	start := time.Now()
 
 	wg := sync.WaitGroup{}
@@ -112,11 +113,11 @@ func ParallelSimulationsSimulation(simulationLoops int, pagesQuantity int, maxPa
 			pages := utils.GeneratePages(pagesQuantity, maxPageNum, localityMaximumFrequency, localityMaximumHistoryLength, localityMaximumLength)
 
 			// run each algorithm and add the faults to their respective variables
-			fifoFaults += algorithms.Fifo(pages, framesQuantity)
-			optFaults += algorithms.Opt(pages, framesQuantity)
-			lruFaults += algorithms.Lru(pages, framesQuantity)
-			alruFaults += algorithms.Alru(pages, framesQuantity)
-			randFaults += algorithms.Rand(pages, framesQuantity)
+			atomic.AddUint64(&fifoFaults, uint64(algorithms.Fifo(pages, framesQuantity)))
+			atomic.AddUint64(&optFaults, uint64(algorithms.Opt(pages, framesQuantity)))
+			atomic.AddUint64(&lruFaults, uint64(algorithms.Lru(pages, framesQuantity)))
+			atomic.AddUint64(&alruFaults, uint64(algorithms.Alru(pages, framesQuantity)))
+			atomic.AddUint64(&randFaults, uint64(algorithms.Rand(pages, framesQuantity)))
 
 			// signal completion of the simulation loop
 			wg.Done()
@@ -126,11 +127,11 @@ func ParallelSimulationsSimulation(simulationLoops int, pagesQuantity int, maxPa
 	// wait for all simulation loops to finish before calculating average page faults
 	wg.Wait()
 
-	PrintStatistics(fifoFaults, simulationLoops, optFaults, lruFaults, alruFaults, randFaults, start)
+	PrintStatistics(int(fifoFaults), simulationLoops, int(optFaults), int(lruFaults), int(alruFaults), int(randFaults), start)
 }
 
 func ParallelSimulationsParallelAlgorithmsGPTSimulation(simulationLoops int, pagesQuantity int, maxPageNum int, localityMaximumFrequency int, localityMaximumHistoryLength int, localityMaximumLength int, framesQuantity int) {
-	fifoFaults, optFaults, lruFaults, alruFaults, randFaults := 0, 0, 0, 0, 0
+	var fifoFaults, optFaults, lruFaults, alruFaults, randFaults uint64 = 0, 0, 0, 0, 0
 	start := time.Now()
 
 	// channels to signal completion of each simulation loop and each algorithm
@@ -148,23 +149,23 @@ func ParallelSimulationsParallelAlgorithmsGPTSimulation(simulationLoops int, pag
 
 			// run each algorithm in a goroutine
 			go func() {
-				fifoFaults += algorithms.Fifo(pages, framesQuantity)
+				atomic.AddUint64(&fifoFaults, uint64(algorithms.Fifo(pages, framesQuantity)))
 				fifoDone <- 1
 			}()
 			go func() {
-				optFaults += algorithms.Opt(pages, framesQuantity)
+				atomic.AddUint64(&optFaults, uint64(algorithms.Opt(pages, framesQuantity)))
 				optDone <- 1
 			}()
 			go func() {
-				lruFaults += algorithms.Lru(pages, framesQuantity)
+				atomic.AddUint64(&lruFaults, uint64(algorithms.Lru(pages, framesQuantity)))
 				lruDone <- 1
 			}()
 			go func() {
-				alruFaults += algorithms.Alru(pages, framesQuantity)
+				atomic.AddUint64(&alruFaults, uint64(algorithms.Alru(pages, framesQuantity)))
 				alruDone <- 1
 			}()
 			go func() {
-				randFaults += algorithms.Rand(pages, framesQuantity)
+				atomic.AddUint64(&randFaults, uint64(algorithms.Rand(pages, framesQuantity)))
 				randDone <- 1
 			}()
 
@@ -187,11 +188,11 @@ func ParallelSimulationsParallelAlgorithmsGPTSimulation(simulationLoops int, pag
 		<-simDone
 	}
 
-	PrintStatistics(fifoFaults, simulationLoops, optFaults, lruFaults, alruFaults, randFaults, start)
+	PrintStatistics(int(fifoFaults), simulationLoops, int(optFaults), int(lruFaults), int(alruFaults), int(randFaults), start)
 }
 
 func ParallelSimulationsParallelAlgorithmsMySimulation(simulationLoops int, pagesQuantity int, maxPageNum int, localityMaximumFrequency int, localityMaximumHistoryLength int, localityMaximumLength int, framesQuantity int) {
-	fifoFaults, optFaults, lruFaults, alruFaults, randFaults := 0, 0, 0, 0, 0
+	var fifoFaults, optFaults, lruFaults, alruFaults, randFaults uint64 = 0, 0, 0, 0, 0
 	start := time.Now()
 
 	wg := sync.WaitGroup{}
@@ -205,23 +206,23 @@ func ParallelSimulationsParallelAlgorithmsMySimulation(simulationLoops int, page
 
 			// run each algorithm and add the faults to their respective variables
 			go func() {
-				fifoFaults += algorithms.Fifo(pages, framesQuantity)
+				atomic.AddUint64(&fifoFaults, uint64(algorithms.Fifo(pages, framesQuantity)))
 				wg.Done()
 			}()
 			go func() {
-				optFaults += algorithms.Opt(pages, framesQuantity)
+				atomic.AddUint64(&optFaults, uint64(algorithms.Opt(pages, framesQuantity)))
 				wg.Done()
 			}()
 			go func() {
-				lruFaults += algorithms.Lru(pages, framesQuantity)
+				atomic.AddUint64(&lruFaults, uint64(algorithms.Lru(pages, framesQuantity)))
 				wg.Done()
 			}()
 			go func() {
-				alruFaults += algorithms.Alru(pages, framesQuantity)
+				atomic.AddUint64(&alruFaults, uint64(algorithms.Alru(pages, framesQuantity)))
 				wg.Done()
 			}()
 			go func() {
-				randFaults += algorithms.Rand(pages, framesQuantity)
+				atomic.AddUint64(&randFaults, uint64(algorithms.Rand(pages, framesQuantity)))
 				wg.Done()
 			}()
 		}()
@@ -230,7 +231,7 @@ func ParallelSimulationsParallelAlgorithmsMySimulation(simulationLoops int, page
 	// wait for all simulation loops to finish before calculating average page faults
 	wg.Wait()
 
-	PrintStatistics(fifoFaults, simulationLoops, optFaults, lruFaults, alruFaults, randFaults, start)
+	PrintStatistics(int(fifoFaults), simulationLoops, int(optFaults), int(lruFaults), int(alruFaults), int(randFaults), start)
 }
 
 func PrintStatistics(fifoFaults int, simulationLoops int, optFaults int, lruFaults int, alruFaults int, randFaults int, start time.Time) {
